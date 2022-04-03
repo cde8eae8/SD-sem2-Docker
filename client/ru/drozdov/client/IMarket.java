@@ -9,12 +9,12 @@ interface IMarket {
     class AdminToken {}
 
     User userInfo(int userId);
-    void addMoney(int userId, double money);
+    boolean addMoney(int userId, double money);
     User addUser(String name);
     boolean buy(int userId, String stock, int amount);
     List<Company> getCompanies();
 
-    boolean addCompany(AdminToken token);
+    int addCompany(AdminToken token, String name);
     boolean addStock(AdminToken token, int companyId, String name, int amount, double price);
     boolean setPrice(AdminToken token, String name, double price);
 }

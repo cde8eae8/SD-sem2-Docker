@@ -7,21 +7,24 @@ import ru.drozdov.common.Stock;
 import ru.drozdov.common.User;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class Market {
     Map<Integer, User> users = new HashMap<>();
     Map<Integer, Company> companies = new HashMap<>();
     Map<String, Company> companyByStock = new HashMap<>();
-    Set<String> registeredStockNames = new HashSet<>();
     Random random = new Random();
     int freeId = 0;
 
     @RequestMapping("/add-user")
-    public int addUser(String name) {
+    public User addUser(String name) {
         int id = freeId++;
-        users.put(id, new User(id, name));
-        return id;
+        System.out.println("User added!");
+        User user = new User(id, name);
+        users.put(id, user);
+        System.out.printf("%s %d %f", user.name, user.id, user.money);
+        return user;
     }
 
     @RequestMapping("/add-company")
@@ -33,17 +36,19 @@ public class Market {
     }
 
     @RequestMapping("/add-stock")
-    public boolean addStock(int companyId, String name, int amount) {
-        if (registeredStockNames.contains(name)) {
+    public boolean addStock(int companyId, String name, int amount, double price) {
+        if (companyByStock.containsKey(name)) {
             return false;
         }
         if (companies.containsKey(companyId)) {
             Company company = companies.get(companyId);
             if (company.numberOfStocks.containsKey(name)) {
                 company.numberOfStocks.get(name).amount += amount;
+                company.numberOfStocks.get(name).stock.price = price;
             } else {
-                company.numberOfStocks.put(name, new Stock(name, getPrice(), amount));
+                company.numberOfStocks.put(name, new Stock(name, price, amount));
             }
+            companyByStock.put(name, company);
             System.out.printf("Stock added: company %s, name %s, amount %d (%d total), price %f\n",
                     company.name, name, amount,
                     company.numberOfStocks.get(name).amount,
@@ -54,19 +59,73 @@ public class Market {
         }
     }
 
+    @RequestMapping("/set-price")
+    public boolean setPrice(String name, double price) {
+        if (!companyByStock.containsKey(name)) {
+            System.out.println("");
+            return false;
+        }
+        Company company = companyByStock.get(name);
+        Stock stock = company.numberOfStocks.get(name);
+        stock.stock.price = price;
+        return true;
+    }
+
     @RequestMapping("/buy")
     public boolean buy(int userId, String stockId, int amount) {
-        return doBuySell(userId, stockId, amount);
+        if (!checkBuySell(userId, stockId)) { return false; }
+        Company company = companyByStock.get(stockId);
+        User user = users.get(userId);
+        Stock stock = company.numberOfStocks.get(stockId);
+        double price = stock.stock.price;
+        if (user.money < price * amount) {
+            return false;
+        }
+        if (!doBuySell(company.numberOfStocks, user.numberOfStocks, stock, amount)) {
+            return false;
+        }
+        user.money -= price * amount;
+        return true;
     }
 
     @RequestMapping("/sell")
     public boolean sell(int userId, String stockId, int amount) {
-        return doBuySell(userId, stockId, -amount);
+        if (!checkBuySell(userId, stockId)) { return false; }
+        Company company = companyByStock.get(stockId);
+        User user = users.get(userId);
+        Stock stock = company.numberOfStocks.get(stockId);
+        double price = stock.stock.price;
+        if (!doBuySell(user.numberOfStocks, company.numberOfStocks, stock, amount)) {
+            return false;
+        }
+        user.money += price * amount;
+        return true;
+    }
+
+    private boolean checkBuySell(int userId, String stockId) {
+        if (!users.containsKey(userId)) { return false; }
+        if (!companyByStock.containsKey(stockId)) { return false; }
+        Company company = companyByStock.get(stockId);
+        return company.numberOfStocks.containsKey(stockId);
+    }
+
+    private boolean doBuySell(Map<String, Stock> from, Map<String, Stock> to, Stock stock, int amount) {
+        if (!from.containsKey(stock.stock.name)) return false;
+        if (from.get(stock.stock.name).amount < amount) {
+            return false;
+        }
+        if (!to.containsKey(stock.stock.name)) {
+            to.put(stock.stock.name, new Stock(stock.stock, 0));
+        }
+        to.get(stock.stock.name).amount += amount;
+        from.get(stock.stock.name).amount -= amount;
+
+        return true;
     }
 
     @RequestMapping("/list-companies")
-    public Map<Integer, Company> listCompanies() {
-        return companies;
+    public List<Company> listCompanies() {
+        return new ArrayList<>(companies.values());
     }
 
     @RequestMapping("/company-info")
@@ -79,22 +138,10 @@ public class Market {
         return users.getOrDefault(userId, null);
     }
 
-    private boolean doBuySell(int userId, String stockId, int amount) {
+    @RequestMapping("/add-money")
+    public boolean userInfo(int userId, double money) {
         if (!users.containsKey(userId)) return false;
-        if (!companyByStock.containsKey(stockId)) return false;
-        Company company = companyByStock.get(stockId);
-        User user = users.get(userId);
-        if (!company.numberOfStocks.containsKey(stockId)) return false;
-        Stock stock = company.numberOfStocks.get(stockId);
-        if (stock.amount < amount) return false;
-        double price = stock.stock.price;
-        if (user.money < price * amount) return false;
-        if (!user.numberOfStocks.containsKey(stockId)) {
-            user.numberOfStocks.put(stockId, new Stock(stock.stock));
-        }
-        user.numberOfStocks.get(stockId).amount += amount;
-        stock.amount -= amount;
-        user.money -= price * amount;
+        users.get(userId).money += money;
         return true;
     }
 

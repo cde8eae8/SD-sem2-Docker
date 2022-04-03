@@ -22,6 +22,7 @@ public class CompanySerializer extends StdSerializer<Company> {
             Company value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException, JsonProcessingException {
         jgen.writeStartObject();
+        jgen.writeNumberField("id", value.id);
         jgen.writeStringField("name", value.name);
         jgen.writeArrayFieldStart("stocks");
         for (Stock stock : value.numberOfStocks.values()) {

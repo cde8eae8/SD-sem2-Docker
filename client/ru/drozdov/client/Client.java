@@ -1,7 +1,6 @@
 package ru.drozdov.client;
 
 import ru.drozdov.common.Company;
-import ru.drozdov.common.Stock;
 import ru.drozdov.common.User;
 
 import java.util.List;
@@ -12,31 +11,20 @@ public class Client {
 
     Client(IMarket market, int id) {
         this.market = market;
-        User user = market.userInfo(id);
-        if (user == null) {
-            // throw
-        }
-        this.user = user;
+        this.user = market.userInfo(id);
     }
 
     Client(IMarket market, String name) {
         this.market = market;
-        User user = market.addUser(name);
-        if (user == null) {
-            // throw
-        }
-        this.user = user;
+        this.user = market.addUser(name);
     }
 
     String name() {
         return this.user.name;
     }
 
-    List<Stock> stocks() {
-        return List.copyOf(market
-                .userInfo(user.id)
-                .numberOfStocks
-                .values());
+    User userInfo() {
+        return market.userInfo(user.id);
     }
 
     List<Company> companies() {
@@ -45,7 +33,8 @@ public class Client {
     }
 
     double total() {
-        return market.userInfo(user.id).numberOfStocks.values().stream()
+        User u = market.userInfo(user.id);
+        return u.money + u.numberOfStocks.values().stream()
                 .reduce(0.0, (l, r) -> l + r.amount * r.stock.price, Double::sum);
     }
 
@@ -53,7 +42,7 @@ public class Client {
         return market.buy(user.id, stock, amount);
     }
 
-    void addMoney(double amount) {
-        market.addMoney(user.id, amount);
+    boolean addMoney(double amount) {
+        return market.addMoney(user.id, amount);
     }
 }

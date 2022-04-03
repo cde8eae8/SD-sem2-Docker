@@ -22,6 +22,7 @@ public class UserSerializer extends StdSerializer<User> {
             User value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException, JsonProcessingException {
         jgen.writeStartObject();
+        jgen.writeNumberField("id", value.id);
         jgen.writeStringField("name", value.name);
         jgen.writeNumberField("money", value.money);
         jgen.writeArrayFieldStart("stocks");
@@ -30,5 +31,8 @@ public class UserSerializer extends StdSerializer<User> {
         }
         jgen.writeEndArray();
         jgen.writeEndObject();
+        String s = "";
+        jgen.writeRawValue(s);
+        System.out.println(s);
     }
 }
