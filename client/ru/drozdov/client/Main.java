@@ -2,8 +2,6 @@ package ru.drozdov.client;
 
 import ru.drozdov.common.Company;
 import ru.drozdov.common.Stock;
-import ru.drozdov.market.Company;
-import ru.drozdov.market.Stock;
 
 import java.util.List;
 import java.util.Map;

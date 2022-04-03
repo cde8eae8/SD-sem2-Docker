@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
-
 @JsonSerialize(using = StockSerializer.class)
 public class Stock {
     public static class StockType {
